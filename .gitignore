@@ -1,4 +1,4 @@
 service-account.json
 airflow/dags/*.py
 correction*.md
-correction/
+correction_cours_kubernetes/
