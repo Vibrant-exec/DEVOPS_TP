@@ -28,13 +28,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Lowercase Owner
+        run: |
+          echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
+        env:
+          OWNER: '${{ github.repository_owner }}'
+
       - name: Build and push Post Pusher
         uses: docker/build-push-action@v4
         with:
           context: .
           file: ./post_pusher/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/post_pusher:latest
+          tags: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/post_pusher:latest
 
       - name: Build and push Post Consumer
         uses: docker/build-push-action@v4
@@ -42,4 +48,4 @@ jobs:
           context: .
           file: ./post_consumer/Dockerfile
           push: true
-          tags: ${{ env.REGISTRY }}/${{ github.repository_owner }}/post_consumer:latest
+          tags: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/post_consumer:latest
