@@ -39,6 +39,12 @@ We installed ArgoCD to manage the Kubernetes state.
 - **Namespace**: `argocd`.
 - **Application**: The `data-pipeline` app syncs the `k8s/` folder from this repo to the cluster.
 
+### F. Automation Layer (CI/CD)
+We implemented a GitHub Actions workflow (`.github/workflows/deploy.yml`).
+- **Trigger**: Push to `main`.
+- **Action**: Builds Docker images and pushes to `ghcr.io/vibrant-exec/...`.
+- **Integration**: Kubernetes manifests now pull specific images from GHCR instead of local versions.
+
 ## 3. Current Deployment Components (In `k8s/` folder)
 | File | Purpose |
 |------|---------|

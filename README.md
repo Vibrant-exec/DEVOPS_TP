@@ -19,6 +19,12 @@ All Kubernetes manifests are located in the `k8s/` directory and managed via Arg
 *   **Apps**: Post Pusher, Post Consumer
 *   **GitOps**: ArgoCD
 
+## CI/CD Pipeline (GitHub Actions)
+Every push to `main` triggers a workflow that:
+1.  Builds Docker images for `post_pusher` and `post_consumer`.
+2.  Pushes them to **GitHub Container Registry (GHCR)**.
+3.  ArgoCD detects the new images (if tags change or if set to Always pull) and updates the cluster.
+
 ## Setup & Installation
 
 ### 1. Prerequisites
