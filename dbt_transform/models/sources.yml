@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: warehouse
+    database: cohesive-poet-477209-h9
+    schema: data_devops
+    tables:
+      - name: posts

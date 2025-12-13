@@ -1,0 +1,13 @@
+default:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: cohesive-poet-477209-h9
+      dataset: data_devops_dbt
+      threads: 4
+      keyfile: /usr/app/service-account.json
+      timeout_seconds: 300
+      location: EU
+      priority: interactive

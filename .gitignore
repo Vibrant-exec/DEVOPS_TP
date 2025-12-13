@@ -1,4 +1,13 @@
-service-account.json
-airflow/dags/*.py
-correction*.md
 correction_cours_kubernetes/
+
+# Secrets (DO NOT PUSH)
+k8s/post_consumer-secret.yaml
+service-account.json
+
+# DBT Artifacts
+dbt_transform/target/
+dbt_transform/logs/
+
+# Python caching
+__pycache__/
+*.pyc

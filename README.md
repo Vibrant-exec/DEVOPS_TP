@@ -22,6 +22,25 @@ docker run 2024_kubernetes_post_pusher
 docker run -p 8000:8000 2024_kubernetes_post_api
 ```
 
+## Running DBT (Transformations)
+To execute the SQL transformations (calculate average scores):
+```bash
+# Run generic model
+docker run --rm -v $(pwd):/usr/app -w /usr/app ghcr.io/dbt-labs/dbt-bigquery:latest run --project-dir dbt_transform --profiles-dir dbt_transform
+```
+
+## Accessing ArgoCD
+To monitor the deployment status:
+```bash
+# 1. Port Forward
+kubectl port-forward svc/argocd-server -n argocd 8080:443
+
+# 2. Open Browser
+# https://localhost:8080
+# User: admin
+# Password: (Get from secret: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
+```
+
 ## Commandes utiles 
 
 ```bash

@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: post-consumer
+  labels:
+    app: post-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: post-consumer
+  template:
+    metadata:
+      labels:
+        app: post-consumer
+    spec:
+      containers:
+      - name: post-consumer
+        image: post_consumer:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "main.py"]
+        args: ["--kafka_host", "$(KAFKA_HOST)", "--topic", "$(KAFKA_TOPIC)", "--dataset", "$(BQ_DATASET)", "--table", "$(BQ_TABLE)"]
+        env:
+        - name: KAFKA_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: post-consumer-config
+              key: KAFKA_HOST
+        - name: KAFKA_TOPIC
+          valueFrom:
+            configMapKeyRef:
+              name: post-consumer-config
+              key: KAFKA_TOPIC
+        - name: BQ_DATASET
+          valueFrom:
+            configMapKeyRef:
+              name: post-consumer-config
+              key: BQ_DATASET
+        - name: BQ_TABLE
+          valueFrom:
+            configMapKeyRef:
+              name: post-consumer-config
+              key: BQ_TABLE
+        - name: GOOGLE_APPLICATION_CREDENTIALS
+          value: "/etc/secrets/key.json"
+        volumeMounts:
+        - name: google-cloud-key
+          mountPath: "/etc/secrets"
+          readOnly: true
+      volumes:
+      - name: google-cloud-key
+        secret:
+          secretName: google-cloud-key
