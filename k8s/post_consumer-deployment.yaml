@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
       - name: post-consumer
-        image: post_consumer:latest
-        imagePullPolicy: IfNotPresent
+        image: ghcr.io/Vibrant-exec/post_consumer:latest
+        imagePullPolicy: Always
         command: ["python", "main.py"]
         args: ["--kafka_host", "$(KAFKA_HOST)", "--topic", "$(KAFKA_TOPIC)", "--dataset", "$(BQ_DATASET)", "--table", "$(BQ_TABLE)"]
         env:

@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
       - name: post-pusher
-        image: post_pusher:latest
-        imagePullPolicy: IfNotPresent
+        image: ghcr.io/Vibrant-exec/post_pusher:latest
+        imagePullPolicy: Always
         command: ["python", "main.py"]
         args: ["--kafka_host", "$(KAFKA_HOST)", "--multiple"]
         env:
