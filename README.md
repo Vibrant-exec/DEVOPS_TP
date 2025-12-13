@@ -1,36 +1,46 @@
-# TP Kubernetes - Cours Data DevOps - Enseirb-Matmeca
+# Data DevOps Data Pipeline
 
-Installer git-lfs avant de cloner le repo pour pouvoir telecharger le fichier de données :
+## Overview
+This project implements a complete data pipeline on Kubernetes, connecting a data producer to Google BigQuery via Kafka, with transformations managed by DBT and deployment managed by ArgoCD (GitOps).
 
-```bash
-brew install git-lfs
-git lfs install
-git clone git@github.com:rqueraud/cours_kubernetes.git
+## Architecture
+```mermaid
+graph LR
+    Pusher[Post Pusher] -->|JSON Messages| Kafka
+    Kafka -->|Topic: posts| Consumer[Post Consumer]
+    Consumer -->|Insert Rows| BQ[(BigQuery)]
+    DBT[DBT Transformation] -->|SQL| BQ
 ```
 
-Placez le fichier `service-account.json`à la racine du projet.
+## Deployment Components
+All Kubernetes manifests are located in the `k8s/` directory and managed via ArgoCD.
 
-Pour builder les images : 
-```bash
-docker build -t 2024_kubernetes_post_pusher -f ./post_pusher/Dockerfile .
-docker build -t 2024_kubernetes_post_api -f ./post_api/Dockerfile .
-```
+*   **Infrastructure**: Kafka, Kafka UI
+*   **Apps**: Post Pusher, Post Consumer
+*   **GitOps**: ArgoCD
 
-Pour executer les images :
-```bash
-docker run 2024_kubernetes_post_pusher
-docker run -p 8000:8000 2024_kubernetes_post_api
-```
+## Setup & Installation
 
-## Running DBT (Transformations)
-To execute the SQL transformations (calculate average scores):
-```bash
-# Run generic model
-docker run --rm -v $(pwd):/usr/app -w /usr/app ghcr.io/dbt-labs/dbt-bigquery:latest run --project-dir dbt_transform --profiles-dir dbt_transform
-```
+### 1. Prerequisites
+*   Kubernetes Cluster (Kind or K3s)
+*   Google Cloud Service Account (`service-account.json`) with BigQuery Admin roles.
 
-## Accessing ArgoCD
-To monitor the deployment status:
+### 2. Secrets Management (Important)
+The consumer requires a GCP key to write to BigQuery.
+1.  Copy `k8s/post_consumer-secret.example.yaml` to `k8s/post_consumer-secret.yaml` (this file is ignored by Git).
+2.  Base64 encode your `service-account.json` (`cat service-account.json | base64 -w 0`).
+3.  Paste the result into `post_consumer-secret.yaml`.
+4.  Apply manually: `kubectl apply -f k8s/post_consumer-secret.yaml`.
+
+### 3. Deploy via ArgoCD
+The project is configured to sync automatically using the GitOps pattern.
+1.  **Install ArgoCD**: Deployed in `argocd` namespace.
+2.  **Sync**: The `data-pipeline` Application watches the `k8s/` folder of this repository.
+
+## Usage Guide
+
+### 🅰️ Accessing ArgoCD
+Monitor your deployment status.
 ```bash
 # 1. Port Forward
 kubectl port-forward svc/argocd-server -n argocd 8080:443
@@ -41,17 +51,16 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443
 # Password: (Get from secret: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
 ```
 
-## Commandes utiles 
-
+### 🅱️ Running DBT (Transformations)
+To execute the SQL transformations (calculate average scores from the raw posts):
 ```bash
-kind create cluster --config ./kind/config.yaml
-kind get clusters  # Vérifie qu'il existe bien un cluster kind
-kind load docker-image my_image
+# Run generic model
+docker run --rm -v $(pwd):/usr/app -w /usr/app ghcr.io/dbt-labs/dbt-bigquery:latest run --project-dir dbt_transform --profiles-dir dbt_transform
+```
 
-k9s -n cours-kubernetes # Controller l'état du déploiement kubernetes
-
-kubectl create ns cours-kubernetes  # Créer un namespace
-kubectl apply -n cours-kubernetes -f my_file.yaml
-
-kubectl delete all -n cours-kubernetes --all  # Supprime tout dans le namespace
+### 🅲 Accessing Kafka UI
+Debug message flow.
+```bash
+kubectl port-forward svc/kafka-ui-service 8081:8080
+# Access at http://localhost:8081
 ```
