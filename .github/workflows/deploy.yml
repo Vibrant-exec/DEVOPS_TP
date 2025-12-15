@@ -37,7 +37,7 @@ jobs:
       - name: Build and push Post Pusher
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./post_pusher
           file: ./post_pusher/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/post_pusher:latest
@@ -45,7 +45,7 @@ jobs:
       - name: Build and push Post Consumer
         uses: docker/build-push-action@v4
         with:
-          context: .
+          context: ./post_consumer
           file: ./post_consumer/Dockerfile
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/post_consumer:latest
