@@ -136,6 +136,8 @@ def main(multiple, kafka_host):
     log.info(os.getcwd())
     with open(data_filepath, "r") as f:
         content = f.read()
+    
+    log.info(f"File content preview (first 200 chars): {content[:200]}")
     posts = json.loads(content)
 
     while True:
