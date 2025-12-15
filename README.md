@@ -18,6 +18,7 @@ All Kubernetes manifests are located in the `k8s/` directory and managed via Arg
 *   **Infrastructure**: Kafka, Kafka UI
 *   **Apps**: Post Pusher, Post Consumer
 *   **GitOps**: ArgoCD
+*   **Resilience**: The `post_pusher` includes a **Demo Mode**. If the dataset fails to load (e.g., LFS issues), it automatically generates synthetic data to keep the pipeline running.
 
 ## CI/CD Pipeline (GitHub Actions)
 Every push to `main` triggers a workflow that:

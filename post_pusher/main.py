@@ -152,29 +152,26 @@ def main(multiple, kafka_host):
     log.info(data_filepath)
     log.info(os.getcwd())
     
-    posts = []
     try:
         with open(data_filepath, "r") as f:
             content = f.read()
-        
+
         # Check if it's an LFS pointer (starts with "version https")
         if content.startswith("version https"):
-            raise ValueError("Detected LFS pointer file, not actual JSON.")
-            
+             log.error("CRITICAL: Detected LFS pointer file in Docker image. The real data was not downloaded.")
+             log.error("Please ensure the file is tracked as a regular git file or LFS is working in CI.")
+             raise ValueError("LFS Pointer found instead of data.")
+
+        log.info(f"File content preview (first 200 chars): {content[:200]}")
         posts = json.loads(content)
         log.info(f"Successfully loaded {len(posts)} posts from file.")
         
     except Exception as e:
-        log.warning(f"Failed to load dataset: {e}")
-        log.warning("⚠️ SWITCHING TO DEMO MODE: Generating synthetic data.")
-        posts = None # Signal to use generator
+        log.error(f"Failed to load dataset: {e}")
+        raise e # Crash the app so we know it failed
 
     while True:
-        if posts:
-            post = random.choice(posts)
-        else:
-            post = generate_dummy_post()
-            time.sleep(1) # Slow down demo mode slightly
+        post = random.choice(posts)
 
         allowed_columns = {field.name for field in SCHEMA}
         # Transform the post for insertion and save to a temporary JSON file
