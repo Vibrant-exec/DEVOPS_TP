@@ -129,19 +129,52 @@ def post_kafka(transformed_post, kafka_host):
     finally:
         producer.close()
 
+def generate_dummy_post():
+    """Generates a synthetic post for demo purposes."""
+    return {
+        "id": str(random.randint(100000, 999999)),
+        "post_type_id": "1",
+        "creation_date": "2023-01-01T12:00:00.000",
+        "score": random.randint(0, 100),
+        "view_count": random.randint(0, 1000),
+        "body": "This is a generated demo post.",
+        "owner_user_id": "123",
+        "title": "Demo Post Title",
+        "answer_count": 1,
+        "comment_count": 0,
+        "content_license": "CC-BY-SA",
+        "tags": "<python><kubernetes>"
+    }
+
 def main(multiple, kafka_host):
     # Load the post from the JSON file
     data_filepath = "./data/movies-stackexchange/json/posts.json"
     log.info(data_filepath)
     log.info(os.getcwd())
-    with open(data_filepath, "r") as f:
-        content = f.read()
     
-    log.info(f"File content preview (first 200 chars): {content[:200]}")
-    posts = json.loads(content)
+    posts = []
+    try:
+        with open(data_filepath, "r") as f:
+            content = f.read()
+        
+        # Check if it's an LFS pointer (starts with "version https")
+        if content.startswith("version https"):
+            raise ValueError("Detected LFS pointer file, not actual JSON.")
+            
+        posts = json.loads(content)
+        log.info(f"Successfully loaded {len(posts)} posts from file.")
+        
+    except Exception as e:
+        log.warning(f"Failed to load dataset: {e}")
+        log.warning("⚠️ SWITCHING TO DEMO MODE: Generating synthetic data.")
+        posts = None # Signal to use generator
 
     while True:
-        post = random.choice(posts)
+        if posts:
+            post = random.choice(posts)
+        else:
+            post = generate_dummy_post()
+            time.sleep(1) # Slow down demo mode slightly
 
         allowed_columns = {field.name for field in SCHEMA}
         # Transform the post for insertion and save to a temporary JSON file
