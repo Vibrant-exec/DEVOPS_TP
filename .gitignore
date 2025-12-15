@@ -11,3 +11,4 @@ dbt_transform/logs/
 # Python caching
 __pycache__/
 *.pyc
+EXAM_REVIEW.md
