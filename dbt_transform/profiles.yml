@@ -1,4 +1,4 @@
-default:
+data_pipeline:
   target: dev
   outputs:
     dev:
