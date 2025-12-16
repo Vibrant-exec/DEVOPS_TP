@@ -18,7 +18,7 @@ All Kubernetes manifests are located in the `k8s/` directory and managed via Arg
 *   **Infrastructure**: Kafka, Kafka UI
 *   **Apps**: Post Pusher, Post Consumer
 *   **GitOps**: ArgoCD
-*   **Resilience**: The `post_pusher` includes a **Demo Mode**. If the dataset fails to load (e.g., LFS issues), it automatically generates synthetic data to keep the pipeline running.
+*   **Resilience**: The `post_pusher` logic is decoupled from BigQuery. If the database is down, Kafka buffers the messages, ensuring no data loss.
 
 ## CI/CD Pipeline (GitHub Actions)
 Every push to `main` triggers a workflow that:
@@ -32,17 +32,38 @@ Every push to `main` triggers a workflow that:
 *   Kubernetes Cluster (Kind or K3s)
 *   Google Cloud Service Account (`service-account.json`) with BigQuery Admin roles.
 
+
 ### 2. Secrets Management (Important)
 The consumer requires a GCP key to write to BigQuery.
-1.  Copy `k8s/post_consumer-secret.example.yaml` to `k8s/post_consumer-secret.yaml` (this file is ignored by Git).
-2.  Base64 encode your `service-account.json` (`cat service-account.json | base64 -w 0`).
-3.  Paste the result into `post_consumer-secret.yaml`.
-4.  Apply manually: `kubectl apply -f k8s/post_consumer-secret.yaml`.
+**Do not commit this key.** Instead, create the secret manually:
+```bash
+kubectl create secret generic google-cloud-key --from-file=key.json=service-account.json
+```
 
-### 3. Deploy via ArgoCD
+
+### 3. Deploy via ArgoCD (Recommended)
 The project is configured to sync automatically using the GitOps pattern.
 1.  **Install ArgoCD**: Deployed in `argocd` namespace.
 2.  **Sync**: The `data-pipeline` Application watches the `k8s/` folder of this repository.
+
+### 4. Manual Deployment (Optional)
+If you prefer to deploy components manually without ArgoCD:
+```bash
+# 1. Infrastructure (Kafka & UI)
+kubectl apply -f k8s/kafka-deployment.yaml
+kubectl apply -f k8s/kafka-service.yaml
+kubectl apply -f k8s/kafka-ui-deployment.yaml
+kubectl apply -f k8s/kafka-ui-service.yaml
+
+# 2. Configuration
+kubectl apply -f k8s/post_pusher-configmap.yaml
+kubectl apply -f k8s/post_consumer-configmap.yaml
+
+# 3. Applications
+kubectl apply -f k8s/post_pusher-deployment.yaml
+kubectl apply -f k8s/post_consumer-deployment.yaml
+```
+
 
 ## Usage Guide
 
@@ -68,6 +89,29 @@ docker run --rm -v $(pwd):/usr/app -w /usr/app ghcr.io/dbt-labs/dbt-bigquery:lat
 ### 🅲 Accessing Kafka UI
 Debug message flow.
 ```bash
-kubectl port-forward svc/kafka-ui-service 8081:8080
+kubectl port-forward svc/kafka-ui 8081:8080
 # Access at http://localhost:8081
 ```
+
+## 🆘 Disaster Recovery (Full Reset)
+If the cluster is broken and you need to restart from scratch:
+
+1.  **Destroy Cluster**:
+    ```bash
+    kind delete cluster
+    ```
+
+2.  **Rebuild Infrastructure**:
+    ```bash
+    kind create cluster --config kind/config.yaml
+    kubectl create namespace argocd
+    kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+    ```
+
+3.  **Wait** for ArgoCD pods to start.
+
+4.  **Restore Secrets & App**:
+    ```bash
+    kubectl create secret generic google-cloud-key --from-file=key.json=service-account.json
+    kubectl apply -f argocd/application.yaml
+    ```
